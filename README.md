@@ -1,10 +1,3 @@
-Automation of Ledger Vendor Reconciliation
-
----
-Here's a README outline tailored for your Flask application that reconciles ledger and vendor data files:
-
----
-
 ### Reconciliation Web Application with Flask
 
 This Flask application reconciles ledger and vendor data files uploaded by users. It performs reconciliation based on different transaction types (invoices, payments, notes) and generates a reconciled output file.
