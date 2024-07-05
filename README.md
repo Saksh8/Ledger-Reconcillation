@@ -1,6 +1,59 @@
 Automation of Ledger Vendor Reconciliation
 
 ---
+Here's a README outline tailored for your Flask application that reconciles ledger and vendor data files:
+
+---
+
+### Reconciliation Web Application with Flask
+
+This Flask application reconciles ledger and vendor data files uploaded by users. It performs reconciliation based on different transaction types (invoices, payments, notes) and generates a reconciled output file.
+
+#### Features
+- **File Upload**: Users can upload their ledger and vendor CSV files.
+- **Reconciliation Logic**: Automatically reconciles transactions based on dates, amounts, and transaction types.
+- **Output**: Generates a CSV file containing reconciled transactions.
+
+#### Setup and Installation
+1. **Dependencies**:
+   - Ensure you have Python installed.
+   - Install Flask and pandas:
+     ```
+     pip install Flask pandas
+     ```
+
+2. **Running the Application**:
+   - Clone or download the repository.
+   - Navigate to the project directory in the terminal.
+   - Run the Flask application:
+     ```
+     python app.py
+     ```
+   - The application will run on `http://localhost:5000`.
+
+#### Usage
+1. **Upload Files**:
+   - Access the application through a web browser.
+   - Click on the upload link to select your ledger and vendor CSV files.
+
+2. **Reconciliation Process**:
+   - After uploading files, click on the 'Reconcile' button.
+   - The application will process the files and generate a reconciled CSV file.
+
+3. **Download Reconciled File**:
+   - Once processing is complete, the reconciled CSV file will be available for download.
+
+#### Example
+- Sample CSV files (`ledger.csv`, `vendor.csv`) are provided in the `uploads` folder for testing purposes.
+
+#### Structure
+- **app.py**: Flask application script handling file upload and reconciliation logic.
+- **upload.html**: HTML template for file upload form.
+- **Reconcillation_Logic.py**: Python script containing the reconciliation functions.
+
+#### Notes
+- Ensure CSV files follow the expected format with appropriate headers (`Date`, `Net Amount`, `TYPE`, etc.).
+- Adjust reconciliation logic in `Reconcillation_Logic.py` to suit specific business rules or requirements.
 
 ### Reconciliation Logic Explanation
 
@@ -26,7 +79,7 @@ Detail how reconciliation is performed for different transaction types:
 
 #### 5. Remarks and Duplicates
 Explain how remarks are added:
-- Adding remarks based on match scores and amount differences.If the match score is found to be 1 and the transaction amount is less than 3Rs, then Sales/Purchase Invoices or Debit Notes/Credit Notes are considered to be matched.
+- Adding remarks based on match scores and amount differences. If the match score is found to be 1 and the transaction amount is less than 3Rs, then Sales/Purchase Invoices or Debit Notes/Credit Notes are considered to be matched.
 - In the case of Payment and Receipt, a "Payment Match" remark is added if the net amount sum in a particular month  in our ledger matches the net amount sum in that particular month with the vendor.
 - Handling duplicate invoices to avoid double-counting.
 
