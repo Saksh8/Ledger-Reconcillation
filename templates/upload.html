@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Files</title>
+</head>
+<body>
+    <h1>Upload Ledger and Vendor CSV Files</h1>
+    <form action="/reconcile" method="post" enctype="multipart/form-data">
+        <label for="ledger">Ledger CSV File:</label>
+        <input type="file" name="ledger" id="ledger" required><br><br>
+        <label for="vendor">Vendor CSV File:</label>
+        <input type="file" name="vendor" id="vendor" required><br><br>
+        <input type="submit" value="Upload and Reconcile">
+    </form>
+</body>
+</html>
