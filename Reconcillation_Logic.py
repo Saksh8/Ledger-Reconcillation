@@ -178,7 +178,7 @@ def check_payment_match_month(ledger_df, vendor_df):
     merged = pd.merge(our_sum, vendor_sum, on='YearMonth', how='left', suffixes=('_our', '_vendor'))
 
     # Creating a dictionary for quick lookup
-    date_match_dict = dict(zip(merged['YearMonth'],abs(merged['Net Amount_our']-merged['Net Amount_vendor'])<=3))
+    date_match_dict = dict(zip(merged['YearMonth'],abs(merged['Net Amount_our']-merged['Net Amount_vendor'])<=50))
 
     # Adding remarks to the original ledger
     ledger_df['remarks'] = ledger_df['YearMonth'].map(lambda ym: 'Payment Matched' if date_match_dict.get(ym, False) else 'Payment Mismatch')
@@ -259,7 +259,7 @@ def update_cumulative_net_amount(ledger_df1_mismatch, vendor_df1):
     # Merge the grouped DataFrames on 'INV'
     merged_df = pd.merge(ledger_grouped, vendor_grouped, on='INV', suffixes=('_ledger', '_vendor'))
 
-    tolerance =50
+    tolerance =3
     merged_df['Matched'] = np.isclose(merged_df['Net Amount_ledger'], merged_df['Net Amount_vendor'], atol=tolerance)
     merged_df['remarks'] = merged_df['Matched'].apply(lambda x: 'Invoice Match' if x else 'Invoice Mismatch')
 
