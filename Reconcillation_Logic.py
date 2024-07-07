@@ -66,6 +66,24 @@ def preprocess_payment(ledger_df,vendor_df):
     
     return ledger_df1,vendor_df1,vendor_df2,ledger_df2
 
+def preprocess_tds(ledger_df,vendor_df):
+    vendor_df['Net Amount']=vendor_df['Net Amount'].astype(float)
+    ledger_df['Net Amount']=ledger_df['Net Amount'].astype(float)
+    ledger_df['Date'] = pd.to_datetime(ledger_df['Date'])
+    vendor_df['Date'] = pd.to_datetime(vendor_df['Date'])
+    ledger_df1=ledger_df[ledger_df['TYPE']=='TDS']
+    vendor_df1=vendor_df[vendor_df['TYPE']=='TDS']
+    vendor_df1['Net Amount']=abs(vendor_df1['Net Amount'])
+    ledger_df1['Net Amount']=abs(ledger_df1['Net Amount'])
+   
+    
+    if(ledger_df1.shape[0]==0):
+        ledger_df1.loc[0] = [0]*(ledger_df1.shape[1])
+    if(vendor_df1.shape[0]==0):
+        vendor_df1.loc[0] = [0]*(vendor_df1.shape[1])
+   
+    
+    return ledger_df1,vendor_df1
 
 # In[4]:
 
@@ -178,7 +196,7 @@ def check_payment_match_month(ledger_df, vendor_df):
     merged = pd.merge(our_sum, vendor_sum, on='YearMonth', how='left', suffixes=('_our', '_vendor'))
 
     # Creating a dictionary for quick lookup
-    date_match_dict = dict(zip(merged['YearMonth'],abs(merged['Net Amount_our']-merged['Net Amount_vendor'])<=50))
+    date_match_dict = dict(zip(merged['YearMonth'],abs(merged['Net Amount_our']-merged['Net Amount_vendor'])<=3))
 
     # Adding remarks to the original ledger
     ledger_df['remarks'] = ledger_df['YearMonth'].map(lambda ym: 'Payment Matched' if date_match_dict.get(ym, False) else 'Payment Mismatch')
@@ -187,6 +205,34 @@ def check_payment_match_month(ledger_df, vendor_df):
     ledger_df.drop(columns=['YearMonth'], inplace=True)
 
     return ledger_df
+
+def check_tds_match_year(ledger_df, vendor_df):
+    # Convert Date columns to datetime in both dataframes
+    ledger_df['Date'] = pd.to_datetime(ledger_df['Date'])
+    vendor_df['Date'] = pd.to_datetime(vendor_df['Date'])
+    
+    # Extract year for grouping
+    ledger_df['Year'] = ledger_df['Date'].dt.year
+    vendor_df['Year'] = vendor_df['Date'].dt.year
+
+    # Grouping by Year and calculating the sum for each dataframe
+    our_sum = ledger_df.groupby('Year')['Net Amount'].sum().reset_index()
+    vendor_sum = vendor_df.groupby('Year')['Net Amount'].sum().reset_index()
+
+    # Merging the sums on Year
+    merged = pd.merge(our_sum, vendor_sum, on='Year', how='left', suffixes=('_our', '_vendor'))
+
+    # Creating a dictionary for quick lookup
+    date_match_dict = dict(zip(merged['Year'], abs(merged['Net Amount_our'] - merged['Net Amount_vendor']) <= 3))
+
+    # Adding remarks to the original ledger
+    ledger_df['remarks'] = ledger_df['Year'].map(lambda yr: 'TDS Matched' if date_match_dict.get(yr, False) else 'TDS Mismatch')
+
+    # Drop the temporary Year column
+    ledger_df.drop(columns=['Year'], inplace=True)
+
+    return ledger_df
+
 
 
 # In[8]:
@@ -207,8 +253,7 @@ def determine_remark(row):
                     return 'CN Not Found'
             else:
                     return 'DN Not Found'
-            
-            
+               
             
     else:
         if row['match_score']==0.000000:
@@ -259,7 +304,7 @@ def update_cumulative_net_amount(ledger_df1_mismatch, vendor_df1):
     # Merge the grouped DataFrames on 'INV'
     merged_df = pd.merge(ledger_grouped, vendor_grouped, on='INV', suffixes=('_ledger', '_vendor'))
 
-    tolerance =3
+    tolerance =50
     merged_df['Matched'] = np.isclose(merged_df['Net Amount_ledger'], merged_df['Net Amount_vendor'], atol=tolerance)
     merged_df['remarks'] = merged_df['Matched'].apply(lambda x: 'Invoice Match' if x else 'Invoice Mismatch')
 
@@ -374,8 +419,12 @@ def reconcile_ledgers_payment(ledger_df,vendor_df):
     
     return reconciled_ledger_payment
     
+def reconcile_ledgers_tds(ledger_df,vendor_df):
+    ledger_df1,vendor_df1=preprocess_tds(ledger_df,vendor_df)
     
+    ledger_df1_updated=check_tds_match_year(ledger_df1,vendor_df1)
     
+    return ledger_df1_updated
 
 
 # In[15]:
@@ -414,7 +463,7 @@ def reconcile_ledgers_note(ledger_df,vendor_df):
 
 
 def reconcile_ledgers(ledger_df,vendor_df):
-    included_types = ['Purchase', 'Sales', 'Payment', 'Receipt', 'Credit Note', 'Debit Note']
+    included_types = ['Purchase', 'Sales', 'Payment', 'Receipt', 'Credit Note', 'Debit Note','TDS']
     filtered_ledger_df = ledger_df[ledger_df['TYPE'].isin(included_types)]
     filtered_vendor_df = vendor_df[vendor_df['TYPE'].isin(included_types)]
     
@@ -432,8 +481,9 @@ def reconcile_ledgers(ledger_df,vendor_df):
     filtered_ledger_df_notes=reconcile_ledgers_note(filtered_ledger_df,filtered_vendor_df)
     #filtered_vendor_df_notes=reconcile_ledgers_note(filtered_vendor_df,filtered_ledger_df)
     
+    filtered_ledger_df_tds=reconcile_ledgers_tds(filtered_ledger_df,filtered_vendor_df)
     
-    reconciled_ledger=pd.concat([filtered_ledger_df_invoice,filtered_ledger_df_payment,filtered_ledger_df_notes,remaining_ledger_df])
+    reconciled_ledger=pd.concat([filtered_ledger_df_invoice,filtered_ledger_df_payment,filtered_ledger_df_notes,filtered_ledger_df_tds,remaining_ledger_df])
     #reconciled_vendor=pd.concat([filtered_vendor_df_invoice,filtered_vendor_df_payment,filtered_vendor_df_notes,remaining_vendor_df])
     
     return reconciled_ledger
